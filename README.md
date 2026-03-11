@@ -1,21 +1,18 @@
 # landing-page-generator
 
-Claude Code skill — Enter product info, AI auto-generates a 13-section product detail page image.
+제품 정보만 입력하면 AI가 13개 섹션 상세페이지 이미지를 자동으로 만들어주는 Claude Code 스킬입니다.
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Features
+## 뭘 할 수 있나요?
 
-- **6-Phase Pipeline** — Automated orchestration from info gathering to final image stitching
-- **Gemini 3 Pro** — REST API-based photorealistic image generation (1200×~7000px)
-- **Parallel Processing** — Copywriting and design run simultaneously
-- **Naver Shopping API** — Auto-collect market research data (optional)
-- **Reference Image** — Upload a design reference and AI analyzes the style
+- 제품명, 특징, 타겟 고객만 알려주면 **상세페이지 이미지 13장**이 자동 생성됩니다
+- 최종 결과물은 **1200px 너비의 세로 합성 이미지** (PNG + PDF)
+- 참고 이미지를 주면 그 스타일을 분석해서 반영합니다
+- 네이버 쇼핑 API로 시장 데이터도 자동 수집합니다 (선택)
 
-## Quick Start
-
-### Install
+## 설치 방법
 
 ```bash
 git clone https://github.com/daniel8824-del/landing-page-generator ~/.claude/skills/landing-page-generator
@@ -23,69 +20,55 @@ cd ~/.claude/skills/landing-page-generator
 bash install.sh
 ```
 
-### Usage
+설치 스크립트가 알아서:
+1. Python 패키지 설치
+2. API 키 설정 안내
+3. 스킬 등록
 
-In Claude Code:
-```
-/landing-page-generator 제품명
-```
+## 사용 방법
 
-### Environment
-
-Create `.env` (see `.env.example`):
+Claude Code에서:
 ```
-GEMINI_API_KEY=your-api-key          # Required
-NAVER_CLIENT_ID=your-id              # Optional (market research)
-NAVER_CLIENT_SECRET=your-secret      # Optional (market research)
+/landing-page-generator 셀 바이탈 리뉴얼 크림
 ```
 
-## 13 Sections
+필요한 정보가 부족하면 AI가 물어봅니다.
 
-| # | Section | Role |
-|---|---------|------|
-| 01 | Hero | Headline, CTA, urgency badge |
-| 02 | Pain | Customer pain points |
-| 03 | Problem | Root cause, structural problem |
-| 04 | Story | Before → After transformation |
-| 05 | Solution | One-line product definition |
-| 06 | How It Works | Step-by-step process |
-| 07 | Social Proof | Reviews, statistics |
-| 08 | Authority | Creator/brand introduction |
-| 09 | Benefits | Perks, bonuses |
-| 10 | Risk Removal | Refund policy, FAQ |
-| 11 | Comparison | Before/After comparison |
-| 12 | Target Filter | Recommended/not recommended |
-| 13 | Final CTA | Final purchase CTA |
+## API 키 설정
 
-## Pipeline
-
+`.env` 파일에 설정 (`.env.example` 참고):
 ```
-Phase 1: Info Gathering (analyst)
-Phase 2: Research (document-specialist) + Naver API
-Phase 3: Copywriting (writer) ∥ Design (designer) — parallel
-Phase 4: Prompting (executor)
-Phase 5: Gemini 3 Pro image generation × 13
-Phase 6: Pillow stitching → final PNG/PDF
+GEMINI_API_KEY=필수
+NAVER_CLIENT_ID=선택 (시장 리서치용)
+NAVER_CLIENT_SECRET=선택 (시장 리서치용)
 ```
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for full details.
+## 생성되는 13개 섹션
 
-## Rules
+| # | 섹션 | 역할 |
+|---|------|------|
+| 01 | Hero | 첫인상 — 헤드라인, CTA 버튼 |
+| 02 | Pain | 고객의 고민/불편함 자극 |
+| 03 | Problem | 진짜 원인 짚어주기 |
+| 04 | Story | 사용 전 → 사용 후 변화 |
+| 05 | Solution | 제품 한 줄 소개 |
+| 06 | How It Works | 이렇게 쓰면 됩니다 |
+| 07 | Social Proof | 후기, 판매 수치 |
+| 08 | Authority | 만든 사람/브랜드 소개 |
+| 09 | Benefits | 혜택, 보너스 구성 |
+| 10 | Risk Removal | 환불 보장, FAQ |
+| 11 | Comparison | 비교표 |
+| 12 | Target Filter | 이런 분께 추천/비추천 |
+| 13 | Final CTA | 지금 바로 구매하세요 |
 
-- **Width**: Exactly **1200px** (never change)
-- **Style**: **Photorealistic** (no illustrations/cartoons/vectors)
-- **Font**: **Pretendard Bold** (weight 700+) for all Korean text
-- **Text limit**: Max **15 characters** per Korean sentence
+## 작동 순서
 
-## CLI Reference
-
-```bash
-pip install -r requirements.txt
-python scripts/gemini_api.py 05-prompt.md output/       # Image generation only
-python scripts/stitch_images.py output/sections          # Stitching only
-python scripts/naver_search.py "product" "category" output/  # Market research only
+```
+1. 정보 수집 → 2. 시장 리서치 → 3. 카피+디자인(동시) → 4. 프롬프트 생성 → 5. 이미지 생성 → 6. 합성
 ```
 
-## License
+자세한 구조는 [ARCHITECTURE.md](ARCHITECTURE.md) 참고.
 
-MIT — see [LICENSE](LICENSE).
+## 라이선스
+
+MIT — 자유롭게 사용하세요.

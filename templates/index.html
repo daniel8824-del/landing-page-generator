@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>상세페이지 자동 생성기</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .phase-card { transition: all 0.3s ease; }
+    @keyframes spin-slow { to { transform: rotate(360deg); } }
+    .animate-spin-slow { animation: spin-slow 1.5s linear infinite; }
+    .progress-bar { transition: width 0.5s ease; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+
+<!-- ── Header ── -->
+<header class="bg-white border-b border-gray-100 shadow-sm">
+  <div class="max-w-4xl mx-auto px-4 py-5 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow">
+      <span class="text-white text-xl">✨</span>
+    </div>
+    <div>
+      <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+        상세페이지 자동 생성기
+      </h1>
+      <p class="text-sm text-gray-400">AI로 쇼핑몰 상세페이지를 자동으로 만들어드립니다</p>
+    </div>
+  </div>
+</header>
+
+<!-- ── Main ── -->
+<main class="max-w-4xl mx-auto px-4 py-8 space-y-6"
+      x-data="pageGen()"
+      x-cloak>
+
+  <!-- ── Input Form ── -->
+  <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6" x-show="!generating && !completed">
+    <h2 class="text-lg font-semibold text-gray-800 mb-5 flex items-center gap-2">
+      <span class="text-blue-500">📋</span> 제품 정보 입력
+    </h2>
+
+    <form @submit.prevent="submitForm" class="space-y-5">
+
+      <!-- 제품명 + 카테고리 -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">제품명 <span class="text-red-400">*</span></label>
+          <input type="text" x-model="formData.product_name" required
+                 placeholder="예: 스마트 공부 플래너"
+                 class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+          <input type="text" x-model="formData.category"
+                 placeholder="예: 화장품/뷰티, 패션/의류, 생활용품, 전자기기"
+                 class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent" />
+        </div>
+      </div>
+
+      <!-- 핵심 특징 -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">핵심 특징 <span class="text-gray-400 font-normal">(최대 3가지)</span></label>
+        <div class="space-y-2">
+          <template x-for="(feat, i) in formData.features" :key="i">
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-400 w-4 text-right" x-text="i+1"></span>
+              <input type="text" x-model="formData.features[i]"
+                     :placeholder="`특징 ${i+1}을 입력하세요`"
+                     class="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- 타겟 고객 -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">타겟 고객</label>
+        <input type="text" x-model="formData.target_customer"
+               placeholder="예: 20-30대 직장인, 자기계발에 관심 있는 분"
+               class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+      </div>
+
+      <!-- 가격 정보 -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">정가 (원)</label>
+          <input type="number" x-model.number="formData.original_price" min="0"
+                 placeholder="예: 59000"
+                 class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">할인가 (원)</label>
+          <input type="number" x-model.number="formData.sale_price" min="0"
+                 placeholder="예: 39000"
+                 class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+        </div>
+      </div>
+
+      <!-- 스타일 프리셋 -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">스타일 프리셋</label>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <template x-for="preset in stylePresets" :key="preset.value">
+            <button type="button"
+                    @click="formData.style_preset = preset.value"
+                    :class="formData.style_preset === preset.value
+                      ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-300'
+                      : 'border-gray-200 text-gray-600 hover:border-blue-300'"
+                    class="rounded-lg border px-3 py-2 text-sm font-medium transition-all text-center">
+              <div x-text="preset.icon" class="text-lg mb-0.5"></div>
+              <div x-text="preset.label"></div>
+            </button>
+          </template>
+        </div>
+      </div>
+
+      <!-- 추가 정보 -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">추가 정보 <span class="text-gray-400 font-normal">(선택)</span></label>
+        <textarea x-model="formData.extra_info" rows="3"
+                  placeholder="브랜드 스토리, 수상 이력, 특별한 성분, 제조사 정보 등 추가할 내용을 자유롭게 입력하세요."
+                  class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"></textarea>
+      </div>
+
+      <!-- 참고자료 (선택) -->
+      <div class="border border-dashed border-gray-200 rounded-xl p-4 space-y-4 bg-gray-50/50">
+        <h3 class="text-sm font-medium text-gray-600 flex items-center gap-2">
+          <span class="text-purple-400">&#128206;</span> 참고 이미지 <span class="text-xs text-gray-400 font-normal">(선택)</span>
+        </h3>
+
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">참고 이미지</label>
+          <input type="file" @change="handleFileUpload($event)" accept="image/png,image/jpeg"
+                 class="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-50 file:text-purple-600 hover:file:bg-purple-100" />
+          <p class="text-xs text-gray-400 mt-1">이미지를 업로드하면 AI가 스타일을 분석하여 디자인에 참고합니다 (PNG, JPG / 최대 5MB)</p>
+        </div>
+      </div>
+
+      <!-- 에러 메시지 -->
+      <div x-show="errorMsg" x-transition
+           class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 flex items-center gap-2">
+        <span>⚠️</span> <span x-text="errorMsg"></span>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit"
+              :disabled="submitting"
+              :class="submitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-blue-700 active:scale-95'"
+              class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl text-base transition-all shadow-md shadow-blue-200 flex items-center justify-center gap-2">
+        <span x-show="!submitting">🚀 생성 시작</span>
+        <span x-show="submitting" class="flex items-center gap-2">
+          <svg class="w-5 h-5 animate-spin-slow" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+          </svg>
+          처리 중…
+        </span>
+      </button>
+
+    </form>
+  </section>
+
+  <!-- ── Pipeline Progress ── -->
+  <section x-show="generating || completed" x-transition
+           class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">
+
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+        <span>⚙️</span> 생성 진행 상황
+      </h2>
+      <button x-show="completed || failed"
+              @click="resetForm"
+              class="text-sm text-blue-600 hover:underline">
+        새로 만들기
+      </button>
+    </div>
+
+    <!-- Overall progress bar -->
+    <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+      <div class="progress-bar h-2 rounded-full"
+           :class="failed ? 'bg-red-400' : 'bg-gradient-to-r from-blue-400 to-indigo-500'"
+           :style="`width: ${progressPercent}%`"></div>
+    </div>
+    <p class="text-xs text-gray-400 text-right -mt-3" x-text="`${progressPercent}% 완료`"></p>
+
+    <!-- Phase cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <template x-for="phase in phases" :key="phase.id">
+        <div class="phase-card rounded-xl border p-3 flex items-start gap-3"
+             :class="{
+               'border-gray-200 bg-gray-50': phase.status === 'pending',
+               'border-blue-200 bg-blue-50': phase.status === 'running',
+               'border-green-200 bg-green-50': phase.status === 'completed',
+               'border-red-200 bg-red-50':    phase.status === 'error',
+             }">
+          <span class="text-xl mt-0.5"
+                :class="phase.status === 'running' ? 'animate-spin-slow inline-block' : ''"
+                x-text="phaseIcon(phase.status)"></span>
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-gray-700 truncate" x-text="phase.label"></p>
+            <p class="text-xs mt-0.5 truncate"
+               :class="{
+                 'text-gray-400':  phase.status === 'pending',
+                 'text-blue-600':  phase.status === 'running',
+                 'text-green-600': phase.status === 'completed',
+                 'text-red-500':   phase.status === 'error',
+               }"
+               x-text="phase.message || statusLabel(phase.status)"></p>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- Latest log message -->
+    <p x-show="latestMessage" x-text="latestMessage"
+       class="text-sm text-gray-500 bg-gray-50 rounded-lg px-4 py-2 border border-gray-100 truncate"></p>
+  </section>
+
+  <!-- ── Results ── -->
+  <section x-show="completed" x-transition
+           class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">
+
+    <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+      <span>📦</span> 다운로드
+    </h2>
+
+    <!-- ZIP (전체 다운로드) -->
+    <a :href="`/download/${jobId}/all`"
+       class="flex items-center justify-between w-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold px-5 py-3 rounded-xl transition-all shadow shadow-indigo-200">
+      <span class="flex items-center gap-2">
+        <span>📥</span> 전체 다운로드 (ZIP)
+      </span>
+      <span class="text-indigo-200 text-sm font-normal">모든 파일 포함</span>
+    </a>
+
+    <!-- 최종 합성 이미지 + PDF -->
+    <div class="space-y-2">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">최종 결과물</p>
+      <div class="divide-y divide-gray-100 rounded-xl border border-gray-100 overflow-hidden">
+        <a :href="`/download/${jobId}/final_detail_page.png`" download="final_detail_page.png"
+           class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 transition-colors group">
+          <span class="flex items-center gap-3">
+            <span class="text-lg">🖼️</span>
+            <span class="text-sm font-medium text-gray-700 group-hover:text-blue-700">최종 합성 이미지</span>
+            <span class="text-xs text-gray-400">final_detail_page.png</span>
+          </span>
+          <span class="text-blue-500 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity">⬇ 저장</span>
+        </a>
+        <a :href="`/download/${jobId}/final_detail_page.pdf`" download="final_detail_page.pdf"
+           class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 transition-colors group">
+          <span class="flex items-center gap-3">
+            <span class="text-lg">📄</span>
+            <span class="text-sm font-medium text-gray-700 group-hover:text-blue-700">PDF 버전</span>
+            <span class="text-xs text-gray-400">final_detail_page.pdf</span>
+          </span>
+          <span class="text-blue-500 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity">⬇ 저장</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- 13개 섹션 이미지 -->
+    <div class="space-y-2">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">섹션별 이미지 (13장)</p>
+      <div class="divide-y divide-gray-100 rounded-xl border border-gray-100 overflow-hidden">
+        <template x-for="sec in sectionFiles" :key="sec.file">
+          <div class="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 transition-colors group">
+            <a :href="`/download/${jobId}/${sec.file}`" :download="sec.file"
+               class="flex items-center gap-3 flex-1 min-w-0">
+              <span class="w-6 text-center text-xs font-bold text-gray-400" x-text="sec.num"></span>
+              <span class="text-sm text-gray-700 group-hover:text-blue-700 truncate" x-text="sec.label"></span>
+              <span class="text-xs text-gray-400 hidden sm:inline" x-text="sec.file"></span>
+            </a>
+            <div class="flex items-center gap-2 ml-2 shrink-0">
+              <button @click="regenerateSection(sec.num)"
+                      :disabled="sec.regenerating"
+                      :class="sec.regenerating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-100'"
+                      class="text-xs text-orange-600 font-medium px-2 py-1 rounded-md border border-orange-200 bg-orange-50 transition-colors">
+                <span x-show="!sec.regenerating">재생성</span>
+                <span x-show="sec.regenerating" class="flex items-center gap-1">
+                  <svg class="w-3 h-3 animate-spin-slow" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                  </svg>
+                  생성 중…
+                </span>
+              </button>
+              <a :href="`/download/${jobId}/${sec.file}`" :download="sec.file"
+                 class="text-blue-500 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity">⬇</a>
+            </div>
+          </div>
+        </template>
+      </div>
+      <!-- 재생성 결과 메시지 -->
+      <p x-show="regenMessage" x-text="regenMessage" x-transition
+         class="text-sm px-4 py-2 rounded-lg"
+         :class="regenError ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-green-50 text-green-600 border border-green-200'"></p>
+    </div>
+  </section>
+
+
+</main>
+
+<!-- ── Footer ── -->
+<footer class="max-w-4xl mx-auto px-4 py-6 text-center text-xs text-gray-300">
+  상세페이지 자동 생성기 &mdash; AI 기반 마케팅 자동화
+</footer>
+
+<script>
+function pageGen() {
+  return {
+    // ── state ──────────────────────────────────────────────────────
+    submitting: false,
+    generating: false,
+    completed:  false,
+    failed:     false,
+    errorMsg:   '',
+    jobId:      null,
+    outputFiles:[],
+    latestMessage: '',
+    eventSource: null,
+
+    // ── form data ──────────────────────────────────────────────────
+    formData: {
+      product_name:    '',
+      category:        '',
+      features:        ['', '', ''],
+      target_customer: '',
+      original_price:  null,
+      sale_price:      null,
+      style_preset:    'Minimal',
+      extra_info:      '',
+    },
+
+    referenceFile: null,
+
+    // ── static config ──────────────────────────────────────────────
+    stylePresets: [
+      { value: 'Minimal',   label: 'Minimal',   icon: '⬜' },
+      { value: 'Sales',     label: 'Sales',     icon: '🔥' },
+      { value: 'Premium',   label: 'Premium',   icon: '💎' },
+      { value: 'Community', label: 'Community', icon: '👥' },
+    ],
+
+    regenMessage: '',
+    regenError: false,
+
+    sectionFiles: [
+      { num: '01', file: '01_hero.png',           label: '히어로 (Hero)',              regenerating: false },
+      { num: '02', file: '02_pain.png',           label: '페인포인트 (Pain)',          regenerating: false },
+      { num: '03', file: '03_problem.png',        label: '문제 인식 (Problem)',        regenerating: false },
+      { num: '04', file: '04_story.png',          label: '스토리 (Story)',             regenerating: false },
+      { num: '05', file: '05_solution.png',       label: '솔루션 (Solution)',          regenerating: false },
+      { num: '06', file: '06_how_it_works.png',   label: '사용 방법 (How It Works)',   regenerating: false },
+      { num: '07', file: '07_social_proof.png',   label: '사회적 증거 (Social Proof)', regenerating: false },
+      { num: '08', file: '08_authority.png',      label: '권위 (Authority)',           regenerating: false },
+      { num: '09', file: '09_benefits.png',       label: '혜택 (Benefits)',            regenerating: false },
+      { num: '10', file: '10_risk_removal.png',   label: '리스크 제거 (Risk Removal)', regenerating: false },
+      { num: '11', file: '11_comparison.png',     label: '비교 (Comparison)',          regenerating: false },
+      { num: '12', file: '12_target_filter.png',  label: '타겟 필터 (Target Filter)',  regenerating: false },
+      { num: '13', file: '13_final_cta.png',      label: '최종 CTA (Final CTA)',       regenerating: false },
+    ],
+
+    phases: [
+      { id: 'intake',      label: '정보 수집',    status: 'pending', message: '' },
+      { id: 'research',    label: '리서치',        status: 'pending', message: '' },
+      { id: 'copy+design', label: '카피+디자인',   status: 'pending', message: '' },
+      { id: 'prompt',      label: '프롬프팅',      status: 'pending', message: '' },
+      { id: 'image_gen',   label: '이미지 생성',   status: 'pending', message: '' },
+      { id: 'stitch',      label: '합성',          status: 'pending', message: '' },
+    ],
+
+    // ── computed ───────────────────────────────────────────────────
+    get progressPercent() {
+      const done = this.phases.filter(p => p.status === 'completed').length;
+      const total = this.phases.length;
+      if (this.completed) return 100;
+      return Math.round((done / total) * 100);
+    },
+
+    // ── helpers ────────────────────────────────────────────────────
+    phaseIcon(status) {
+      return { pending: '⏳', running: '🔄', completed: '✅', error: '❌' }[status] ?? '⏳';
+    },
+    statusLabel(status) {
+      return { pending: '대기 중', running: '처리 중…', completed: '완료', error: '오류' }[status] ?? '';
+    },
+
+    _updatePhase(phaseId, status, message) {
+      const phase = this.phases.find(p => p.id === phaseId);
+      if (phase) {
+        phase.status  = status;
+        phase.message = message;
+      }
+    },
+
+    // ── actions ────────────────────────────────────────────────────
+    handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (file && file.size <= 5 * 1024 * 1024) {
+        this.referenceFile = file;
+      } else if (file) {
+        alert('파일 크기는 5MB 이하여야 합니다.');
+        event.target.value = '';
+      }
+    },
+
+    async submitForm() {
+      this.errorMsg  = '';
+      this.submitting = true;
+
+      // Clean up features list
+      const payload = {
+        ...this.formData,
+        features: this.formData.features.filter(f => f.trim() !== ''),
+      };
+
+      try {
+        const fd = new FormData();
+        fd.append('product_info', JSON.stringify(payload));
+        if (this.referenceFile) {
+          fd.append('reference_image', this.referenceFile);
+        }
+        const res  = await fetch('/generate', {
+          method:  'POST',
+          body:    fd,
+        });
+        const data = await res.json();
+
+        if (!res.ok || !data.job_id) {
+          throw new Error(data.error || '생성 요청에 실패했습니다.');
+        }
+
+        this.jobId      = data.job_id;
+        this.submitting = false;
+        this.generating = true;
+        this._connectSSE(data.job_id);
+
+      } catch (err) {
+        this.errorMsg   = err.message;
+        this.submitting = false;
+      }
+    },
+
+    _connectSSE(jobId) {
+      if (this.eventSource) this.eventSource.close();
+
+      const es = new EventSource(`/status/${jobId}`);
+      this.eventSource = es;
+
+      es.onmessage = (evt) => {
+        let data;
+        try { data = JSON.parse(evt.data); } catch { return; }
+
+        const { phase, status, message, files } = data;
+
+        if (phase === 'done') {
+          this.completed  = true;
+          this.generating = false;
+          this.outputFiles = files || [];
+          es.close();
+          return;
+        }
+
+        this._updatePhase(phase, status, message);
+        this.latestMessage = message;
+
+        if (files && files.length) this.outputFiles = files;
+      };
+
+      es.addEventListener('done', () => {
+        this.completed  = true;
+        this.generating = false;
+        es.close();
+      });
+
+      es.onerror = () => {
+        // If SSE drops after completion, treat as done
+        const job = this.phases.every(p => p.status === 'completed');
+        if (job) {
+          this.completed  = true;
+          this.generating = false;
+        } else {
+          this.failed     = true;
+          this.generating = false;
+          this.latestMessage = 'SSE 연결이 끊어졌습니다.';
+        }
+        es.close();
+      };
+    },
+
+    async regenerateSection(sectionNum) {
+      const sec = this.sectionFiles.find(s => s.num === sectionNum);
+      if (!sec || sec.regenerating) return;
+
+      sec.regenerating = true;
+      this.regenMessage = `섹션 ${sectionNum} 재생성 중...`;
+      this.regenError = false;
+
+      try {
+        const res = await fetch(`/regenerate/${this.jobId}/${parseInt(sectionNum)}`, { method: 'POST' });
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || '재생성에 실패했습니다.');
+        }
+
+        this.regenMessage = `섹션 ${sectionNum} 재생성 완료! (합성 이미지도 업데이트됨)`;
+        this.regenError = false;
+      } catch (err) {
+        this.regenMessage = `섹션 ${sectionNum} 재생성 실패: ${err.message}`;
+        this.regenError = true;
+      } finally {
+        sec.regenerating = false;
+      }
+    },
+
+    resetForm() {
+      if (this.eventSource) this.eventSource.close();
+      this.generating   = false;
+      this.completed    = false;
+      this.failed       = false;
+      this.submitting   = false;
+      this.errorMsg     = '';
+      this.jobId        = null;
+      this.outputFiles  = [];
+      this.latestMessage= '';
+      this.phases.forEach(p => { p.status = 'pending'; p.message = ''; });
+    },
+  };
+}
+</script>
+</body>
+</html>

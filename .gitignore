@@ -9,6 +9,11 @@ _temp/
 .omc/
 .claude/
 
+# Web UI (separate from skill)
+app.py
+orchestrator.py
+templates/
+
 # Sample images
 *.jpg
 

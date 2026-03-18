@@ -33,7 +33,18 @@ Claude Code에서:
 /landing-page 셀 바이탈 리뉴얼 크림
 ```
 
-### 2. 웹앱
+### 2. Google Antigravity
+
+```bash
+git clone https://github.com/daniel8824-del/landing-page-generator.git
+cd landing-page-generator
+pip install -r requirements.txt
+```
+
+`.agent/skills/landing-page/` 폴더가 자동 인식됩니다.
+Antigravity에서 "상세페이지 만들어줘"라고 입력하면 스킬이 실행됩니다.
+
+### 3. 웹앱
 
 ```bash
 pip install -r requirements.txt
@@ -44,7 +55,7 @@ uvicorn app.main:app --port 8000
 
 브라우저에서 `http://localhost:8000` 접속
 
-### 3. Railway 배포
+### 4. Railway 배포
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/template)
 

@@ -1,39 +1,7 @@
-# API keys
-.env
-
-# Output files
-output/
-_temp/
-
-# OMC / Claude local state
-.omc/
-.claude/
-
-# Web UI (separate from skill)
-app.py
-orchestrator.py
-templates/
-
-# Sample images
-*.jpg
-
-# Python
 __pycache__/
 *.pyc
-*.pyo
-*.egg-info/
-dist/
-build/
-.venv/
+.env
 venv/
-
-# OS
+output/
+_temp/
 .DS_Store
-Thumbs.db
-desktop.ini
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo

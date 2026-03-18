@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상세페이지 자동 생성</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Pretendard', -apple-system, sans-serif; background: #f8f9fa; color: #28251D; }
+
+        .header { background: #01696F; color: white; padding: 24px 0; }
+        .header h1 { max-width: 800px; margin: 0 auto; padding: 0 20px; font-size: 24px; }
+        .header p { max-width: 800px; margin: 4px auto 0; padding: 0 20px; opacity: 0.8; font-size: 14px; }
+
+        .container { max-width: 800px; margin: 32px auto; padding: 0 20px; }
+
+        .card { background: white; border-radius: 12px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
+        .card h2 { color: #01696F; font-size: 18px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #E8F5F5; }
+
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; color: #333; }
+        .required::after { content: " *"; color: #e74c3c; }
+        input, textarea, select { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 16px; font-family: inherit; }
+        textarea { min-height: 80px; resize: vertical; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: #01696F; box-shadow: 0 0 0 3px rgba(1,105,111,0.1); }
+        select { background: white; }
+
+        .row { display: flex; gap: 16px; }
+        .row > * { flex: 1; }
+
+        .btn { background: #01696F; color: white; border: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.2s; }
+        .btn:hover { background: #015258; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        .progress-section { display: none; }
+        .progress-bar { background: #E8F5F5; border-radius: 8px; overflow: hidden; height: 8px; margin: 12px 0; }
+        .progress-fill { background: #01696F; height: 100%; transition: width 0.5s; width: 0%; }
+        .phase-text { font-size: 14px; color: #666; margin-top: 8px; }
+        .progress-pct { font-size: 24px; font-weight: 700; color: #01696F; }
+
+        .file-upload-zone { border: 1px dashed #ccc; border-radius: 8px; padding: 12px; margin-bottom: 16px; background: #fafafa; }
+        .file-add-btn { background: #E8F5F5; color: #01696F; border: 1px solid #01696F; border-radius: 6px; padding: 6px 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .file-add-btn:hover { background: #01696F; color: white; }
+        .file-list { margin-top: 8px; }
+        .file-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; font-size: 13px; color: #555; background: white; border-radius: 4px; margin-top: 4px; }
+        .file-item .file-name { flex: 1; }
+        .file-item .file-size { color: #999; margin: 0 12px; }
+        .file-item .file-remove { color: #e74c3c; cursor: pointer; font-weight: 600; border: none; background: none; font-size: 14px; }
+
+        .result-section { display: none; }
+        .download-btn { display: inline-block; background: #01696F; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin: 8px 8px 8px 0; font-weight: 600; }
+        .download-btn:hover { background: #015258; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>상세페이지 자동 생성</h1>
+        <p>AI 기반 마케팅 카피 + Gemini 이미지 생성 + 13개 섹션 자동 합성</p>
+    </div>
+
+    <div class="container">
+        <form id="genForm" class="card" enctype="multipart/form-data">
+            <h2>제품 정보</h2>
+
+            <label class="required">제품명</label>
+            <input name="product_name" required placeholder="예: 셀 바이탈 리뉴얼 크림">
+
+            <label>핵심 특징 (쉼표 구분)</label>
+            <input name="features" placeholder="예: 피부 장벽 강화, 48시간 보습, 저자극 포뮬러">
+
+            <label>타겟 고객</label>
+            <input name="target_customer" placeholder="예: 30대 직장인 여성, 건조하고 민감한 피부">
+
+            <label>카테고리</label>
+            <input name="category" placeholder="예: 화장품, 뷰티">
+
+            <div class="row">
+                <div>
+                    <label>정가 (원)</label>
+                    <input name="original_price" placeholder="58000">
+                </div>
+                <div>
+                    <label>할인가 (원)</label>
+                    <input name="sale_price" placeholder="39000">
+                </div>
+            </div>
+
+            <label>스타일 프리셋</label>
+            <select name="style_preset">
+                <option value="Minimal">Minimal — 신뢰/프로 (SaaS, B2B)</option>
+                <option value="Sales">Sales — 긴급/에너지 (이벤트)</option>
+                <option value="Premium">Premium — 럭셔리/정제 (고가)</option>
+                <option value="Community">Community — 따뜻/소속감 (교육)</option>
+            </select>
+
+            <label>추가 정보</label>
+            <textarea name="extra_info" placeholder="참고할 추가 정보를 자유롭게 입력하세요"></textarea>
+
+            <label>참고 이미지 <span style="font-weight:400;color:#999;">(선택)</span></label>
+            <div class="file-upload-zone" id="refZone">
+                <button type="button" class="file-add-btn" onclick="document.getElementById('refInput').click()">+ 파일 추가</button>
+                <input type="file" id="refInput" accept="image/*" multiple style="display:none;">
+                <div id="refList" class="file-list"></div>
+            </div>
+
+            <label>리뷰 데이터 <span style="font-weight:400;color:#999;">(선택)</span></label>
+            <div class="file-upload-zone" id="reviewZone">
+                <button type="button" class="file-add-btn" onclick="document.getElementById('reviewInput').click()">+ 파일 추가</button>
+                <input type="file" id="reviewInput" accept=".xlsx,.csv" multiple style="display:none;">
+                <div id="reviewList" class="file-list"></div>
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">상세페이지 생성 시작</button>
+        </form>
+
+        <!-- 진행 상태 -->
+        <div id="progressSection" class="card progress-section">
+            <h2>생성 진행 중...</h2>
+            <div class="progress-pct" id="progressPct">0%</div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="phase-text" id="phaseText">준비 중...</div>
+        </div>
+
+        <!-- 결과 -->
+        <div id="resultSection" class="card result-section">
+            <h2>상세페이지 완성!</h2>
+            <p style="margin-bottom: 16px;">아래 버튼으로 다운로드하세요.</p>
+
+            <div style="margin-bottom: 20px;">
+                <a class="download-btn" id="dlZip" href="#" download>전체 ZIP 다운로드</a>
+                <a class="download-btn" id="dlPng" href="#" download style="background:#2C3E50;">최종 PNG</a>
+                <a class="download-btn" id="dlPdf" href="#" download style="background:#7F8C8D;">최종 PDF</a>
+            </div>
+
+            <h2>단계별 산출물</h2>
+            <div id="mdFiles" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;"></div>
+
+            <h2>섹션 이미지 (13장)</h2>
+            <div id="sectionFiles" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+    </div>
+
+    <script>
+        function createFileManager(inputId, listId, formFieldName) {
+            const input = document.getElementById(inputId);
+            const list = document.getElementById(listId);
+            const files = [];
+
+            input.addEventListener('change', () => {
+                Array.from(input.files).forEach(f => {
+                    if (!files.some(x => x.name === f.name && x.size === f.size)) files.push(f);
+                });
+                input.value = '';
+                renderList();
+            });
+
+            function renderList() {
+                list.innerHTML = '';
+                files.forEach((f, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'file-item';
+                    const size = f.size > 1024*1024 ? (f.size/1024/1024).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB';
+                    div.innerHTML = '<span class="file-name">' + f.name + '</span><span class="file-size">' + size + '</span><button type="button" class="file-remove" data-idx="' + i + '">X</button>';
+                    list.appendChild(div);
+                });
+                list.querySelectorAll('.file-remove').forEach(btn => {
+                    btn.addEventListener('click', (e) => { files.splice(parseInt(e.target.dataset.idx), 1); renderList(); });
+                });
+            }
+
+            return { getFiles: () => files, name: formFieldName };
+        }
+
+        const refManager = createFileManager('refInput', 'refList', 'reference_images');
+        const reviewManager = createFileManager('reviewInput', 'reviewList', 'review_files');
+
+        const form = document.getElementById('genForm');
+        const progressSection = document.getElementById('progressSection');
+        const resultSection = document.getElementById('resultSection');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            // 커스텀 파일 매니저에서 파일 추가
+            refManager.getFiles().forEach(f => formData.append('reference_images', f));
+            reviewManager.getFiles().forEach(f => formData.append('review_files', f));
+            document.getElementById('submitBtn').disabled = true;
+            progressSection.style.display = 'block';
+            resultSection.style.display = 'none';
+
+            try {
+                const resp = await fetch('/api/start', { method: 'POST', body: formData });
+                const data = await resp.json();
+                if (data.error) {
+                    alert(data.error);
+                    document.getElementById('submitBtn').disabled = false;
+                    progressSection.style.display = 'none';
+                    return;
+                }
+                pollStatus(data.job_id);
+            } catch (err) {
+                alert('요청 실패: ' + err.message);
+                document.getElementById('submitBtn').disabled = false;
+                progressSection.style.display = 'none';
+            }
+        });
+
+        function pollStatus(jobId) {
+            const poll = setInterval(async () => {
+                try {
+                    const status = await fetch(`/api/status/${jobId}`).then(r => r.json());
+                    document.getElementById('progressPct').textContent = status.progress + '%';
+                    document.getElementById('progressFill').style.width = status.progress + '%';
+                    document.getElementById('phaseText').textContent = status.phase;
+
+                    if (status.status === 'completed') {
+                        clearInterval(poll);
+                        progressSection.style.display = 'none';
+                        resultSection.style.display = 'block';
+                        document.getElementById('dlZip').href = `/api/download/${jobId}/all`;
+                        document.getElementById('dlPng').href = `/api/download/${jobId}/final_detail_page.png`;
+                        document.getElementById('dlPdf').href = `/api/download/${jobId}/final_detail_page.pdf`;
+                        document.getElementById('submitBtn').disabled = false;
+
+                        // Fetch all files
+                        fetch(`/api/files/${jobId}`).then(r => r.json()).then(data => {
+                            const mdFiles = document.getElementById('mdFiles');
+                            const sectionFiles = document.getElementById('sectionFiles');
+                            mdFiles.innerHTML = '';
+                            sectionFiles.innerHTML = '';
+                            const labels = {
+                                '00-market.md': '시장 리서치',
+                                '00-reviews.md': '리뷰 분석',
+                                '01-intake.md': '제품 정보 분석',
+                                '02-research.md': '경쟁사·타겟 분석',
+                                '03-copy.md': '마케팅 카피',
+                                '04-design.md': '디자인 가이드',
+                                '05-prompt.md': '이미지 프롬프트',
+                            };
+                            const sectionLabels = {
+                                '01_hero.png': '01 히어로',
+                                '02_pain.png': '02 고민·공감',
+                                '03_problem.png': '03 문제 정의',
+                                '04_story.png': '04 변화 스토리',
+                                '05_solution.png': '05 솔루션 소개',
+                                '06_how_it_works.png': '06 사용 방법',
+                                '07_social_proof.png': '07 후기·증거',
+                                '08_authority.png': '08 전문성',
+                                '09_benefits.png': '09 혜택·보너스',
+                                '10_risk_removal.png': '10 환불·FAQ',
+                                '11_comparison.png': '11 비교',
+                                '12_target_filter.png': '12 추천 대상',
+                                '13_final_cta.png': '13 최종 구매',
+                            };
+                            (data.files || []).forEach(f => {
+                                const a = document.createElement('a');
+                                a.href = `/api/download/${jobId}/${f.name.replace('sections/', '')}`;
+                                a.download = '';
+                                a.style.cssText = 'display:inline-block;padding:8px 16px;background:#E8F5F5;color:#01696F;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #01696F;';
+                                if (f.name.startsWith('sections/')) {
+                                    const base = f.name.replace('sections/', '');
+                                    a.textContent = sectionLabels[base] || base;
+                                    sectionFiles.appendChild(a);
+                                } else if (f.name.endsWith('.md')) {
+                                    a.textContent = labels[f.name] || f.name;
+                                    a.href = `/api/download/${jobId}/${f.name}`;
+                                    mdFiles.appendChild(a);
+                                }
+                            });
+                        });
+                    }
+                    if (status.status === 'error') {
+                        clearInterval(poll);
+                        document.getElementById('phaseText').textContent = '에러: ' + status.phase;
+                        document.getElementById('submitBtn').disabled = false;
+                    }
+                } catch (err) {
+                    console.error('Poll error:', err);
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

@@ -2,6 +2,13 @@
 
 AI가 제품 정보만으로 13개 섹션 상세페이지 이미지를 자동 생성합니다.
 
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688)](https://fastapi.tiangolo.com/)
+[![Claude Sonnet 4.6](https://img.shields.io/badge/Claude-Sonnet%204.6-blueviolet)](https://anthropic.com/)
+[![Gemini 3 Pro](https://img.shields.io/badge/Gemini-3%20Pro-orange)](https://ai.google.dev/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Deploy on Railway](https://img.shields.io/badge/Railway-Deploy-black)](https://landing-generator.up.railway.app)
+
 ## Features
 
 - 제품명, 특징, 타겟 고객만 입력하면 **상세페이지 이미지 13장** 자동 생성
